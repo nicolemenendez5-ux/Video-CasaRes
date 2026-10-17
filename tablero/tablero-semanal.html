@@ -1,0 +1,1009 @@
+<title>Tablero Semanal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: franja de indicadores arriba, luego dos columnas (acción a la izquierda, contexto a la derecha) y cierre al final. */
+:root {
+  --bg: #F4F5F7;
+  --surface: #FCFCFD;
+  --surface-2: #ECEEF2;
+  --line: #DFE2E7;
+  --fg: #15181C;
+  --muted: #59626E;
+  --accent: #2A5B88;
+  --accent-soft: #E2EBF4;
+  --on-accent: #F7F9FC;
+  --good: #1E774B;
+  --good-soft: #E0F1E7;
+  --warn: #8F5A00;
+  --warn-soft: #FAEFD9;
+  --bad: #AE2A21;
+  --bad-soft: #FAE5E2;
+  --meeting: #9AA4B2;
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r-card: 10px;
+  --r-ctl: 7px;
+  --shadow: 0 1px 2px rgba(20, 24, 30, .05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D0F12; --surface: #15181D; --surface-2: #1D2127; --line: rgba(255,255,255,.09);
+    --fg: #E7E9EC; --muted: #9AA3AE; --accent: #84ABD3; --accent-soft: #1C2938; --on-accent: #0D1520;
+    --good: #5EBE8C; --good-soft: #142A1F; --warn: #DFAA50; --warn-soft: #2B2213; --bad: #EE8B82; --bad-soft: #321A19;
+    --meeting: #4C5561; --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D0F12; --surface: #15181D; --surface-2: #1D2127; --line: rgba(255,255,255,.09);
+  --fg: #E7E9EC; --muted: #9AA3AE; --accent: #84ABD3; --accent-soft: #1C2938; --on-accent: #0D1520;
+  --good: #5EBE8C; --good-soft: #142A1F; --warn: #DFAA50; --warn-soft: #2B2213; --bad: #EE8B82; --bad-soft: #321A19;
+  --meeting: #4C5561; --shadow: none; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font);
+  font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1240px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.num, .tab-num { font-variant-numeric: tabular-nums; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+p { margin: 0; }
+ul { margin: 0; padding: 0; list-style: none; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.eyebrow { font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Encabezado */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.top-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;
+  padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap;
+}
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.accent { background: var(--accent-soft); color: var(--accent); }
+.banner {
+  display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r-card);
+  background: var(--warn-soft); color: var(--fg); font-size: 14px;
+}
+.banner svg { flex: none; color: var(--warn); margin-top: 2px; }
+.banner.info { background: var(--accent-soft); }
+.banner.info svg { color: var(--accent); }
+
+/* Indicadores */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: 14px 16px; box-shadow: var(--shadow); min-width: 0; }
+.kpi .val { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin-top: 4px; }
+.kpi .val small { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.kpi .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 10px; overflow: hidden; }
+.meter > span { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .2s ease-out; }
+
+/* Rejilla principal */
+.grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--shadow); min-width: 0; }
+.card-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; padding: 16px 18px 0; }
+.card-b { padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 14px; }
+.card.primary { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+
+/* Foco de la semana */
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.metric { background: var(--surface-2); border-radius: var(--r-ctl); padding: 10px 12px; min-width: 0; }
+.metric .m-name { font-size: 12px; color: var(--muted); }
+.metric .m-val { font-size: 16px; font-weight: 600; margin-top: 2px; overflow-wrap: anywhere; }
+.metric .m-delta { font-size: 13px; font-weight: 500; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+.metric.flag { box-shadow: inset 0 0 0 1.5px var(--bad); }
+.d-good { color: var(--good); }
+.d-bad { color: var(--bad); }
+.d-flat { color: var(--muted); }
+.prios { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.prio { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-ctl); }
+.prio-n { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 14px; display: grid; place-items: center; }
+.prio-t { font-weight: 500; }
+.prio-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+/* Botones y controles */
+button, select, input { font: inherit; color: inherit; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 6px 12px;
+  border-radius: var(--r-ctl); border: 1px solid var(--line); background: var(--surface); cursor: pointer;
+  font-size: 14px; font-weight: 500; white-space: nowrap; transition: background-color .15s ease-out, border-color .15s ease-out;
+}
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--fg)); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.ghost:hover { background: var(--surface-2); color: var(--fg); }
+.btn[disabled] { opacity: .55; cursor: default; }
+.btn.icon { width: 36px; padding: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="text"], select {
+  min-height: 38px; padding: 6px 10px; border-radius: var(--r-ctl); border: 1px solid var(--line);
+  background: var(--surface); min-width: 0;
+}
+input[type="text"]:focus, select:focus { border-color: var(--accent); }
+
+/* Plan semanal */
+.add-form { display: flex; flex-direction: column; gap: 6px; }
+.add-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px auto; gap: 8px; }
+.add-form label { font-size: 13px; font-weight: 500; color: var(--muted); }
+.plan-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 10px 12px; border-radius: var(--r-ctl); background: var(--surface-2); font-size: 14px; }
+.items { display: flex; flex-direction: column; }
+.item { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 4px; border-top: 1px solid var(--line); }
+.item:first-child { border-top: 0; }
+.item input[type="checkbox"] { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--accent); cursor: pointer; }
+.item-t { overflow-wrap: anywhere; }
+.item.done .item-t { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); }
+.item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.item-meta select { min-height: 30px; padding: 2px 8px; font-size: 13px; max-width: 100%; }
+.empty { padding: 18px; border: 1px dashed var(--line); border-radius: var(--r-ctl); text-align: center; color: var(--muted); font-size: 14px; }
+
+/* Agenda */
+.bullets { display: flex; flex-direction: column; gap: 8px; }
+.bullets li { position: relative; padding-left: 16px; }
+.bullets li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.tabs { display: flex; gap: 4px; padding: 3px; background: var(--surface-2); border-radius: var(--r-ctl); }
+.tab { flex: 1; min-height: 34px; border: 0; background: transparent; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: var(--shadow); }
+.events { display: flex; flex-direction: column; }
+.ev { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.ev:first-child { border-top: 0; }
+.ev-time { color: var(--muted); white-space: nowrap; }
+.ev-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+
+/* Tiempo */
+.split { display: flex; gap: 20px; flex-wrap: wrap; }
+.split .big { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.timeline { display: flex; flex-direction: column; gap: 8px; }
+.tl-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 72px; gap: 10px; align-items: center; font-size: 13px; }
+.tl-row.today .tl-day { color: var(--fg); font-weight: 600; }
+.tl-day { color: var(--muted); white-space: nowrap; }
+.tl-track { position: relative; height: 18px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.tl-seg { position: absolute; top: 0; bottom: 0; }
+.tl-seg.m { background: var(--meeting); }
+.tl-seg.f { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); border-radius: 3px; }
+.tl-seg.past { position: absolute; top: 0; bottom: 0; left: 0; background: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--fg) 7%, transparent) 4px 6px); }
+.tl-hours { text-align: right; color: var(--muted); }
+.tl-axis { display: grid; grid-template-columns: 44px minmax(0, 1fr) 72px; gap: 10px; font-size: 11px; color: var(--muted); }
+.tl-axis .ticks { position: relative; height: 14px; }
+.tl-axis .ticks span { position: absolute; transform: translateX(-50%); }
+.tl-axis .ticks span:first-child { transform: none; }
+.tl-axis .ticks span:last-child { transform: translateX(-100%); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+/* Bloques de foco */
+.blocks { display: flex; flex-direction: column; }
+.block { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.block:first-child { border-top: 0; }
+.block-for { font-size: 13px; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+
+/* Correo */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-size: 12px; font-weight: 500; color: var(--muted); padding: 0 8px 6px 0; border-bottom: 1px solid var(--line); }
+td { padding: 8px 8px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.age, th.age { text-align: right; padding-right: 0; white-space: nowrap; }
+.from { font-weight: 500; }
+
+/* Cierre */
+.close-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.close-col h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.close-col li { font-size: 14px; padding: 4px 0; overflow-wrap: anywhere; }
+.card.highlight { border-color: var(--accent); }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(8px);
+  background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: var(--r-ctl); font-size: 14px;
+  opacity: 0; pointer-events: none; transition: opacity .18s ease-out, transform .18s ease-out; max-width: calc(100% - 32px);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.skeleton { height: 14px; border-radius: 4px; background: var(--surface-2); }
+
+@media (max-width: 980px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .close-grid { grid-template-columns: minmax(0, 1fr); }
+  .kpi .val { font-size: 24px; }
+}
+@media (max-width: 480px) {
+  .add-row { grid-template-columns: minmax(0, 1fr) 96px; }
+  .add-row .btn { grid-column: 1 / -1; }
+  .prio { grid-template-columns: 28px minmax(0, 1fr); }
+  .prio > .btn { grid-column: 2; justify-self: start; }
+  .ev { grid-template-columns: 86px minmax(0, 1fr); }
+  .tl-row, .tl-axis { grid-template-columns: 46px minmax(0, 1fr) 48px; gap: 8px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow" id="semana-label">Semana</p>
+      <h1>Tablero Semanal</h1>
+    </div>
+    <div class="top-meta" id="top-meta"></div>
+  </header>
+
+  <div id="banner"></div>
+
+  <section class="kpis" id="kpis" aria-label="Resumen de la semana"></section>
+
+  <div class="grid">
+    <div class="col">
+      <section class="card primary" aria-labelledby="h-foco">
+        <div class="card-h">
+          <h2 id="h-foco">Foco de la semana</h2>
+          <span class="small muted" id="foco-sub"></span>
+        </div>
+        <div class="card-b" id="foco"></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-plan">
+        <div class="card-h">
+          <h2 id="h-plan">Plan y cumplimiento</h2>
+          <span class="small muted" id="plan-sub"></span>
+        </div>
+        <div class="card-b">
+          <form class="add-form" id="form-item" autocomplete="off">
+            <label for="nuevo-titulo">Nuevo entregable</label>
+            <div class="add-row">
+              <input type="text" id="nuevo-titulo" maxlength="160" placeholder="Ej.: Enviar presupuesto de promociones">
+              <select id="nuevo-prio" aria-label="Prioridad">
+                <option value="alta">Alta</option>
+                <option value="media" selected>Media</option>
+                <option value="baja">Baja</option>
+              </select>
+              <button class="btn primary" type="submit">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                Agregar
+              </button>
+            </div>
+          </form>
+          <div id="plan-status"></div>
+          <div id="plan-items"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card" aria-labelledby="h-agenda">
+        <div class="card-h">
+          <h2 id="h-agenda">Hoy y la semana</h2>
+          <span class="small muted">Outlook</span>
+        </div>
+        <div class="card-b" id="agenda"></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-tiempo">
+        <div class="card-h">
+          <h2 id="h-tiempo">Reuniones vs. horas libres</h2>
+          <span class="small muted" id="tiempo-sub"></span>
+        </div>
+        <div class="card-b" id="tiempo"></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-bloques">
+        <div class="card-h">
+          <h2 id="h-bloques">Bloques de foco</h2>
+          <span class="small muted">Huecos de 1 h o más</span>
+        </div>
+        <div class="card-b" id="bloques"></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-correo">
+        <div class="card-h">
+          <h2 id="h-correo">Correo</h2>
+          <span class="small muted" id="correo-sub"></span>
+        </div>
+        <div class="card-b" id="correo"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card" id="cierre-card" aria-labelledby="h-cierre">
+    <div class="card-h">
+      <h2 id="h-cierre">Cierre del viernes</h2>
+      <span class="small muted" id="cierre-sub"></span>
+    </div>
+    <div class="card-b" id="cierre"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Configuración ----------
+  const UMBRAL = 0.03;
+  const BLOQUE_MIN = 60;
+  const METRICAS = [
+    { k: "ventas", nombre: "Ventas", dec: 0, sube: "bien" },
+    { k: "tkt", nombre: "Ticket promedio", dec: 2, sube: "bien" },
+    { k: "costo", nombre: "Costo", dec: 0, sube: "mal" },
+    { k: "contribucion", nombre: "Contribución", dec: 0, sube: "bien" },
+  ];
+  const ACCIONES = {
+    ventas: [
+      "Revisar tráfico y conversión por tienda para ubicar dónde se perdió la venta",
+      "Activar comunicación en las 3 categorías que más venden",
+      "Revisar quiebres de stock en los productos más vendidos",
+    ],
+    tkt: [
+      "Upselling: armar 2 combos con productos complementarios",
+      "Definir la sugerencia de complemento en caja para la semana",
+      "Revisar el peso de los productos de bajo precio en la venta",
+    ],
+    costo: [
+      "Revisar mermas de la semana por categoría",
+      "Comparar precios de los 5 proveedores principales",
+      "Revisar la mezcla: peso de los productos de bajo margen",
+    ],
+    contribucion: [
+      "Lanzar una promoción en las 2 categorías de mejor margen",
+      "Revisar descuentos activos que están reduciendo el margen",
+      "Dar mejor exhibición a los productos de alto margen",
+    ],
+  };
+  const PRIO_TXT = { alta: "Alta", media: "Media", baja: "Baja" };
+  const PRIO_CLS = { alta: "bad", media: "warn", baja: "" };
+
+  // ---------- Estado ----------
+  const S = {
+    db: null,
+    dbEstado: "cargando", // cargando | ok | sin-db | error
+    datos: undefined,      // undefined = cargando, null = no hay datos
+    semanaId: null,
+    planRef: null,
+    planUnsub: null,
+    plan: null,
+    planCargado: false,
+    chain: Promise.resolve(),
+    diaSel: null,
+    moviendo: false,
+  };
+
+  // ---------- Utilidades ----------
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const uid = () => (crypto && crypto.randomUUID ? crypto.randomUUID() : "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const MIN = 60000;
+  const fmtNum = (n, dec) => new Intl.NumberFormat("es-MX", { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
+  const fmtMoney = (n, dec) => "$" + fmtNum(n, dec);
+  const fmtPct = (x, dec = 1) => fmtNum(x * 100, dec) + "%";
+  const fmtH = (min) => fmtNum(min / 60, 1) + " h";
+  const fmtDur = (min) => {
+    const h = Math.floor(min / 60), m = Math.round(min % 60);
+    return h && m ? `${h} h ${m} min` : h ? `${h} h` : `${m} min`;
+  };
+  const fmtTime = (d) => d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+  const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+  const DIAS_L = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+  const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const MESES_L = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const fmtDia = (d) => `${DIAS[d.getDay()]} ${d.getDate()}`;
+  const fmtFechaLarga = (d) => `${DIAS_L[d.getDay()]} ${d.getDate()} de ${MESES_L[d.getMonth()]}`;
+  const parse = (s) => { const d = new Date(s); return isNaN(d) ? null : d; };
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const mondayOf = (d) => addDays(startOfDay(d), -((d.getDay() + 6) % 7));
+  const atTime = (day, hhmm) => { const [h, m] = String(hhmm).split(":").map(Number); return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h || 0, m || 0); };
+  function isoWeek(d) {
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const day = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - day);
+    const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    const w = Math.ceil(((t - y0) / 86400000 + 1) / 7);
+    return t.getUTCFullYear() + "-W" + String(w).padStart(2, "0");
+  }
+  const weekNum = (id) => Number(String(id).split("-W")[1]);
+  const icon = {
+    alert: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+    info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+    up: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>',
+    down: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10M17 8v9H8"/></svg>',
+    trash: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+    check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+    plus: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    arrow: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  };
+
+  let toastT = null;
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastT);
+    toastT = setTimeout(() => t.classList.remove("show"), 2600);
+  }
+
+  // ---------- Cálculos ----------
+  // Fecha de referencia: "ahora", salvo en datos de ejemplo, que traen su propio momento simulado.
+  function refDate() {
+    const d = S.datos;
+    if (d && d.ejemplo && d.fechaReferencia) { const r = parse(d.fechaReferencia); if (r) return r; }
+    return new Date();
+  }
+
+  function semanaDatos() {
+    const d = S.datos;
+    const ini = d && d.semanaInicio ? parse(d.semanaInicio + "T00:00") : null;
+    return ini ? mondayOf(ini) : mondayOf(refDate());
+  }
+
+  function horario() {
+    const h = (S.datos && S.datos.horario) || {};
+    return { inicio: h.inicio || "09:00", fin: h.fin || "18:00" };
+  }
+
+  function eventos() {
+    const evs = (S.datos && S.datos.agenda && Array.isArray(S.datos.agenda.eventos)) ? S.datos.agenda.eventos : [];
+    return evs.map((e) => ({ ...e, ini: parse(e.inicio), end: parse(e.fin) })).filter((e) => e.ini && e.end && e.end > e.ini);
+  }
+
+  function merge(intervals) {
+    const s = intervals.slice().sort((a, b) => a[0] - b[0]);
+    const out = [];
+    for (const iv of s) {
+      const last = out[out.length - 1];
+      if (last && iv[0] <= last[1]) last[1] = Math.max(last[1], iv[1]);
+      else out.push([iv[0], iv[1]]);
+    }
+    return out;
+  }
+
+  // Por cada día laboral: reuniones (unidas), huecos y bloques de foco.
+  function analisisSemana() {
+    const lunes = semanaDatos();
+    const h = horario();
+    const evs = eventos();
+    const ref = refDate();
+    const dias = [];
+    for (let i = 0; i < 5; i++) {
+      const dia = addDays(lunes, i);
+      const ws = atTime(dia, h.inicio).getTime(), we = atTime(dia, h.fin).getTime();
+      const delDia = evs.filter((e) => !e.todoElDia && e.tipo !== "libre" && e.ini.getTime() < we && e.end.getTime() > ws);
+      const reun = merge(delDia.map((e) => [Math.max(ws, e.ini.getTime()), Math.min(we, e.end.getTime())]));
+      const huecos = [];
+      let cur = ws;
+      for (const [a, b] of reun) { if (a > cur) huecos.push([cur, a]); cur = Math.max(cur, b); }
+      if (cur < we) huecos.push([cur, we]);
+      const minReun = reun.reduce((s, [a, b]) => s + (b - a) / MIN, 0);
+      const minLab = (we - ws) / MIN;
+      // Tiempo libre que aún no pasa.
+      const libreRestante = huecos.reduce((s, [a, b]) => s + Math.max(0, (b - Math.max(a, ref.getTime())) / MIN), 0);
+      dias.push({ dia, ws, we, reun, huecos, minReun, minLab, libreRestante });
+    }
+    const totLab = dias.reduce((s, d) => s + d.minLab, 0);
+    const totReun = dias.reduce((s, d) => s + d.minReun, 0);
+    const bloques = [];
+    for (const d of dias) {
+      for (const [a, b] of d.huecos) {
+        const ini = Math.max(a, ref.getTime());
+        if ((b - ini) / MIN >= BLOQUE_MIN) bloques.push({ ini: new Date(ini), fin: new Date(b), min: (b - ini) / MIN });
+      }
+    }
+    bloques.sort((x, y) => y.min - x.min || x.ini - y.ini);
+    return {
+      dias, totLab, totReun,
+      libreRestante: dias.reduce((s, d) => s + d.libreRestante, 0),
+      bloques: bloques.slice(0, 5),
+    };
+  }
+
+  const bloqueKey = (b) => (b ? new Date(b.ini || b.inicio).toISOString() : "");
+  const bloqueTxt = (b) => {
+    const i = b.ini || parse(b.inicio), f = b.fin instanceof Date ? b.fin : parse(b.fin);
+    return `${fmtDia(i)}, ${fmtTime(i)}–${fmtTime(f)}`;
+  };
+
+  function analisisMetricas() {
+    const m = S.datos && S.datos.metricas && Array.isArray(S.datos.metricas.semanas) ? S.datos.metricas.semanas.slice() : [];
+    if (m.length < 2) return null;
+    m.sort((a, b) => String(a.semana).localeCompare(String(b.semana)));
+    const prev = m[m.length - 2], cur = m[m.length - 1];
+    const umbral = typeof S.datos.umbral === "number" ? S.datos.umbral : UMBRAL;
+    const filas = METRICAS.map((def) => {
+      const a = Number(prev[def.k]), b = Number(cur[def.k]);
+      const delta = a ? (b - a) / a : 0;
+      const adverso = def.sube === "mal" ? delta : -delta;
+      return { ...def, prev: a, cur: b, delta, adverso, flag: adverso >= umbral };
+    });
+    const malas = filas.filter((f) => f.flag).sort((x, y) => y.adverso - x.adverso);
+    // Tres prioridades: una por métrica afectada (de la peor a la menos mala) y, si faltan, más acciones de la peor.
+    const prios = [];
+    const usadas = {};
+    let ronda = 0;
+    while (malas.length && prios.length < 3 && ronda < 3) {
+      for (const f of malas) {
+        if (prios.length >= 3) break;
+        const acc = ACCIONES[f.k][ronda];
+        if (acc && !usadas[acc]) { usadas[acc] = 1; prios.push({ metrica: f, accion: acc }); }
+      }
+      ronda++;
+    }
+    return { prev, cur, filas, malas, prios, umbral };
+  }
+
+  // ---------- Plan semanal ----------
+  const planVacio = (id) => ({ semana: id, confirmado: false, items: [] });
+
+  function savePlan(mutar) {
+    if (!S.plan) S.plan = planVacio(S.semanaId);
+    const p = clone(S.plan);
+    mutar(p);
+    S.plan = p;
+    render();
+    if (!S.planRef) return;
+    const body = clone(p);
+    const ref = S.planRef;
+    S.chain = S.chain.then(() => ref.set(body)).catch(() => toast("No se pudo guardar el cambio. Revisa tu conexión e intenta de nuevo."));
+  }
+
+  function suscribirPlan() {
+    const id = isoWeek(refDate());
+    if (id === S.semanaId && (S.planRef || !S.db)) return;
+    S.semanaId = id;
+    if (S.planUnsub) { S.planUnsub(); S.planUnsub = null; }
+    S.plan = planVacio(id);
+    S.planCargado = !S.db;
+    if (!S.db) return;
+    S.planRef = S.db.doc("semanas/" + id);
+    S.planUnsub = S.planRef.onSnapshot(
+      (snap) => { S.plan = snap.exists ? clone(snap.data()) : planVacio(id); if (!Array.isArray(S.plan.items)) S.plan.items = []; S.planCargado = true; render(); },
+      () => { S.planCargado = true; toast("No se pudo leer el plan de esta semana."); render(); }
+    );
+  }
+
+  function agregarItem(titulo, prioridad, extra) {
+    savePlan((p) => {
+      p.items.push({
+        id: uid(), titulo, prioridad, hecho: false,
+        planeado: p.confirmado ? false : null,
+        origen: "manual", bloque: null, creado: new Date().toISOString(),
+        ...extra,
+      });
+    });
+  }
+
+  function stats(plan) {
+    const items = (plan && plan.items) || [];
+    const plan_ = items.filter((i) => i.planeado !== false);
+    const hechos = plan_.filter((i) => i.hecho);
+    return {
+      total: plan_.length, hechos: hechos.length,
+      pct: plan_.length ? hechos.length / plan_.length : 0,
+      noPlan: items.filter((i) => i.planeado === false),
+      pend: items.filter((i) => !i.hecho),
+      todos: items,
+    };
+  }
+
+  async function pasarPendientes() {
+    if (!S.db || S.moviendo) return;
+    const pend = S.plan.items.filter((i) => !i.hecho && !i.movido);
+    if (!pend.length) return;
+    S.moviendo = true; render();
+    const sigId = isoWeek(addDays(mondayOf(refDate()), 7));
+    try {
+      const ref = S.db.doc("semanas/" + sigId);
+      const snap = await ref.get();
+      const sig = snap.exists ? clone(snap.data()) : planVacio(sigId);
+      if (!Array.isArray(sig.items)) sig.items = [];
+      for (const i of pend) {
+        sig.items.push({
+          id: uid(), titulo: i.titulo, prioridad: i.prioridad, hecho: false,
+          planeado: sig.confirmado ? false : null, origen: "arrastre", desde: S.semanaId,
+          bloque: null, creado: new Date().toISOString(),
+        });
+      }
+      await ref.set(sig);
+      savePlan((p) => p.items.forEach((i) => { if (!i.hecho && !i.movido) i.movido = sigId; }));
+      toast(`${pend.length} ${pend.length === 1 ? "pendiente pasó" : "pendientes pasaron"} a la semana ${weekNum(sigId)}.`);
+    } catch (e) {
+      toast("No se pudieron pasar los pendientes. Intenta de nuevo.");
+    } finally {
+      S.moviendo = false; render();
+    }
+  }
+
+  // ---------- Render ----------
+  function render() {
+    const cargando = S.dbEstado === "cargando";
+    const ref = refDate();
+    const lunes = semanaDatos();
+    const viernes = addDays(lunes, 4);
+    const semId = isoWeek(ref);
+    $("semana-label").textContent = `Semana ${weekNum(semId)} · ${lunes.getDate()}${lunes.getMonth() !== viernes.getMonth() ? " " + MESES[lunes.getMonth()] : ""}–${viernes.getDate()} ${MESES[viernes.getMonth()]}`;
+
+    renderTop(ref);
+    if (cargando) { renderCargando(); return; }
+
+    const hay = !!S.datos;
+    const sem = hay ? analisisSemana() : null;
+    const met = hay ? analisisMetricas() : null;
+    const st = stats(S.plan);
+
+    renderKpis(sem, st);
+    renderFoco(met, sem);
+    renderPlan(st, sem);
+    renderAgenda(ref);
+    renderTiempo(sem, ref);
+    renderBloques(sem);
+    renderCorreo(ref);
+    renderCierre(st, met, ref);
+  }
+
+  function renderTop(ref) {
+    const d = S.datos;
+    let meta = "";
+    if (d && d.ejemplo) meta += '<span class="pill warn">Datos de ejemplo</span>';
+    else if (d && d.fuente) meta += `<span class="pill good">${esc(d.fuente)}</span>`;
+    if (d && d.actualizado) {
+      const a = parse(d.actualizado);
+      if (a) meta += `<span class="pill">Actualizado ${esc(fmtDia(a))}, ${esc(fmtTime(a))}</span>`;
+    }
+    $("top-meta").innerHTML = meta;
+
+    let b = "";
+    if (S.dbEstado === "sin-db") {
+      b = `<div class="banner">${icon.alert}<p>Este tablero lee y guarda tus datos en claude.ai. Ábrelo desde claude.ai con tu cuenta para ver la agenda y guardar tu plan; en esta vista los cambios no se guardan.</p></div>`;
+    } else if (S.dbEstado === "error") {
+      b = `<div class="banner">${icon.alert}<p>No se pudieron cargar los datos del tablero. Recarga la página para intentarlo de nuevo.</p></div>`;
+    } else if (S.dbEstado === "ok" && !d) {
+      b = `<div class="banner info">${icon.info}<p>Aún no hay datos de agenda, correo ni métricas. Pídele a Claude que actualice el tablero. Tu plan semanal ya funciona.</p></div>`;
+    } else if (d && d.ejemplo) {
+      b = `<div class="banner">${icon.info}<p><strong>Vista de ejemplo, simulada al ${esc(fmtFechaLarga(ref))} a las ${esc(fmtTime(ref))}.</strong> La agenda, el correo y las métricas son datos de ejemplo hasta que conectemos Microsoft 365. Tu plan semanal sí se guarda.</p></div>`;
+    } else if (ref.getDay() === 5 || ref.getDay() === 6 || ref.getDay() === 0) {
+      b = `<div class="banner info">${icon.info}<p>Es fin de semana laboral: revisa el <a href="#cierre-card">cierre del viernes</a> y pasa tus pendientes a la próxima semana.</p></div>`;
+    }
+    $("banner").innerHTML = b;
+  }
+
+  function renderCargando() {
+    const sk = '<div class="skeleton" style="width:70%"></div><div class="skeleton" style="width:90%"></div><div class="skeleton" style="width:55%"></div>';
+    $("kpis").innerHTML = ["En reuniones", "Horas para trabajo propio", "Avance del plan", "Correos por responder"]
+      .map((t) => `<div class="kpi"><p class="eyebrow">${t}</p><div class="val muted">–</div><p class="sub">Cargando…</p></div>`).join("");
+    ["foco", "agenda", "tiempo", "bloques", "correo", "cierre"].forEach((id) => { $(id).innerHTML = sk; });
+    $("plan-status").innerHTML = "";
+    $("plan-items").innerHTML = '<div class="empty">Cargando tu plan…</div>';
+  }
+
+  function renderKpis(sem, st) {
+    const pend = (S.datos && S.datos.correo && Array.isArray(S.datos.correo.pendientes)) ? S.datos.correo.pendientes : [];
+    const ref = refDate();
+    const masViejo = pend.reduce((mx, p) => { const r = parse(p.recibido); return r ? Math.max(mx, Math.floor((startOfDay(ref) - startOfDay(r)) / 86400000)) : mx; }, 0);
+    const pctR = sem && sem.totLab ? sem.totReun / sem.totLab : 0;
+    const k = [];
+    k.push(`<div class="kpi"><p class="eyebrow">En reuniones</p><div class="val num">${sem ? fmtPct(pctR, 0) : "–"}</div><p class="sub">${sem ? `${fmtH(sem.totReun)} de ${fmtH(sem.totLab)} laborales` : "Sin datos de agenda"}</p></div>`);
+    k.push(`<div class="kpi"><p class="eyebrow">Horas para trabajo propio</p><div class="val num">${sem ? esc(fmtNum((sem.totLab - sem.totReun) / 60, 1)) + " <small>h</small>" : "–"}</div><p class="sub">${sem ? `Quedan ${fmtH(sem.libreRestante)} desde hoy` : "Sin datos de agenda"}</p></div>`);
+    k.push(`<div class="kpi"><p class="eyebrow">Avance del plan</p><div class="val num">${st.total ? fmtPct(st.pct, 0) : "–"}</div><p class="sub">${st.total ? `${st.hechos} de ${st.total} entregables cerrados` : "Aún no hay entregables"}</p><div class="meter" aria-hidden="true"><span style="width:${(st.pct * 100).toFixed(1)}%"></span></div></div>`);
+    k.push(`<div class="kpi"><p class="eyebrow">Correos por responder</p><div class="val num">${S.datos ? pend.length : "–"}</div><p class="sub">${pend.length ? `El más antiguo espera ${masViejo} ${masViejo === 1 ? "día" : "días"}` : S.datos ? "Todo respondido" : "Sin datos de correo"}</p></div>`);
+    $("kpis").innerHTML = k.join("");
+  }
+
+  function deltaHtml(f) {
+    const pct = fmtPct(Math.abs(f.delta));
+    if (Math.abs(f.delta) < 0.0005) return '<span class="m-delta d-flat">Sin cambio</span>';
+    const bueno = f.adverso < 0;
+    return `<span class="m-delta ${bueno ? "d-good" : "d-bad"}">${f.delta > 0 ? icon.up : icon.down}<span class="num">${f.delta > 0 ? "+" : "−"}${pct}</span><span class="sr">${bueno ? "favorable" : "desfavorable"}</span></span>`;
+  }
+
+  function renderFoco(met, sem) {
+    if (!met) {
+      $("foco-sub").textContent = "";
+      $("foco").innerHTML = '<div class="empty">Cuando haya métricas de dos semanas (ventas, tkt, costo y contribución), aquí aparecerán tus 3 prioridades.</div>';
+      return;
+    }
+    $("foco-sub").textContent = `Semana ${weekNum(met.cur.semana)} vs. ${weekNum(met.prev.semana)}`;
+    const tiles = met.filas.map((f) => `
+      <div class="metric${f.flag ? " flag" : ""}">
+        <p class="m-name">${esc(f.nombre)}</p>
+        <p class="m-val num">${esc(fmtMoney(f.cur, f.dec))}</p>
+        ${deltaHtml(f)}
+      </div>`).join("");
+    let body = `<div class="metrics">${tiles}</div>`;
+    if (!met.prios.length) {
+      body += `<p class="muted small">Ninguna métrica empeoró ${fmtPct(met.umbral, 0)} o más frente a la semana anterior. Mantén tu plan y usa los bloques de foco para tus entregables.</p>`;
+    } else {
+      const peor = met.malas[0];
+      body += `<p class="small"><strong>${esc(peor.nombre)}</strong> es la métrica que más empeoró (${fmtPct(Math.abs(peor.delta))}). Estas son tus 3 prioridades:</p>`;
+      const items = (S.plan && S.plan.items) || [];
+      const bloques = sem ? sem.bloques : [];
+      body += '<ol class="prios">' + met.prios.map((p, i) => {
+        const b = bloques[i];
+        const ya = items.some((it) => it.origen === "foco" && it.titulo === p.accion);
+        return `<li class="prio">
+          <span class="prio-n" aria-hidden="true">${i + 1}</span>
+          <div>
+            <p class="prio-t">${esc(p.accion)}</p>
+            <div class="prio-meta">
+              <span class="pill bad">${esc(p.metrica.nombre)} ${p.metrica.delta > 0 ? "+" : "−"}${fmtPct(Math.abs(p.metrica.delta))}</span>
+              ${b ? `<span class="pill accent">Bloque sugerido: ${esc(bloqueTxt(b))}</span>` : '<span class="pill">Sin bloque libre esta semana</span>'}
+            </div>
+          </div>
+          ${ya
+            ? `<button class="btn ghost" type="button" disabled>${icon.check} En el plan</button>`
+            : `<button class="btn" type="button" data-act="foco-add" data-i="${i}">${icon.plus} Agregar al plan</button>`}
+        </li>`;
+      }).join("") + "</ol>";
+    }
+    $("foco").innerHTML = body;
+  }
+
+  function renderPlan(st, sem) {
+    const p = S.plan || planVacio(S.semanaId);
+    $("plan-sub").textContent = S.semanaId ? `Semana ${weekNum(S.semanaId)}` : "";
+    if (!S.planCargado) {
+      $("plan-status").innerHTML = "";
+      $("plan-items").innerHTML = '<div class="empty">Cargando tu plan…</div>';
+      return;
+    }
+    let status;
+    if (!p.confirmado) {
+      status = `<div class="plan-status"><span>${st.todos.length ? "Escribe tus entregables y confirma el plan. Lo que agregues después contará como no planeado." : "El lunes escribe aquí lo que planeas cerrar esta semana."}</span>
+        ${st.todos.length ? `<button class="btn primary" type="button" data-act="confirmar">${icon.check} Confirmar plan</button>` : ""}</div>`;
+    } else {
+      const c = parse(p.confirmadoEn);
+      status = `<div class="plan-status"><span><strong class="num">${fmtPct(st.pct, 0)}</strong> de avance · ${st.hechos} de ${st.total} cerrados${st.noPlan.length ? ` · ${st.noPlan.length} no ${st.noPlan.length === 1 ? "planeado" : "planeados"}` : ""}${c ? ` <span class="muted">· Plan confirmado el ${esc(fmtDia(c))}</span>` : ""}</span>
+        <button class="btn ghost" type="button" data-act="reabrir">Reabrir plan</button></div>`;
+    }
+    $("plan-status").innerHTML = status;
+
+    if (!st.todos.length) {
+      $("plan-items").innerHTML = '<div class="empty">Aún no hay entregables. Agrégalos arriba o desde las prioridades del Foco de la semana.</div>';
+      return;
+    }
+    const bloques = sem ? sem.bloques : [];
+    const orden = { alta: 0, media: 1, baja: 2 };
+    const items = p.items.slice().sort((a, b) => (a.hecho - b.hecho) || (orden[a.prioridad] - orden[b.prioridad]));
+    $("plan-items").innerHTML = '<ul class="items">' + items.map((it) => {
+      const opts = bloques.slice();
+      if (it.bloque && !opts.some((b) => bloqueKey(b) === bloqueKey(it.bloque))) opts.push(it.bloque);
+      const sel = `<label class="sr" for="bl-${esc(it.id)}">Bloque de foco</label>
+        <select id="bl-${esc(it.id)}" data-act="bloque" data-id="${esc(it.id)}">
+          <option value="">Sin bloque</option>
+          ${opts.map((b) => `<option value="${esc(bloqueKey(b))}"${it.bloque && bloqueKey(b) === bloqueKey(it.bloque) ? " selected" : ""}>${esc(bloqueTxt(b))}</option>`).join("")}
+        </select>`;
+      return `<li class="item${it.hecho ? " done" : ""}">
+        <input type="checkbox" id="ck-${esc(it.id)}" data-act="toggle" data-id="${esc(it.id)}"${it.hecho ? " checked" : ""} aria-label="Marcar como cerrado: ${esc(it.titulo)}">
+        <div>
+          <label class="item-t" for="ck-${esc(it.id)}">${esc(it.titulo)}</label>
+          <div class="item-meta">
+            <span class="pill ${PRIO_CLS[it.prioridad] || ""}">${esc(PRIO_TXT[it.prioridad] || "Media")}</span>
+            ${it.origen === "foco" ? '<span class="pill accent">Foco de la semana</span>' : ""}
+            ${it.origen === "arrastre" && it.desde ? `<span class="pill">Viene de la semana ${weekNum(it.desde)}</span>` : ""}
+            ${it.planeado === false ? '<span class="pill warn">No planeado</span>' : ""}
+            ${it.movido ? `<span class="pill">Pasó a la semana ${weekNum(it.movido)}</span>` : ""}
+            ${it.hecho ? "" : sel}
+          </div>
+        </div>
+        <button class="btn icon ghost" type="button" data-act="borrar" data-id="${esc(it.id)}" aria-label="Eliminar ${esc(it.titulo)}">${icon.trash}</button>
+      </li>`;
+    }).join("") + "</ul>";
+  }
+
+  function renderAgenda(ref) {
+    const ag = S.datos && S.datos.agenda;
+    if (!ag) { $("agenda").innerHTML = '<div class="empty">Sin datos de agenda todavía.</div>'; return; }
+    const lunes = semanaDatos();
+    const evs = eventos();
+    const hoyIdx = Math.round((startOfDay(ref) - lunes) / 86400000);
+    if (S.diaSel == null) S.diaSel = hoyIdx >= 0 && hoyIdx <= 4 ? hoyIdx : 0;
+    const dest = Array.isArray(ag.destacados) ? ag.destacados.slice(0, 5) : [];
+    let html = dest.length
+      ? `<div><p class="eyebrow" style="margin-bottom:8px">Lo más relevante</p><ul class="bullets">${dest.map((d) => `<li>${esc(d)}</li>`).join("")}</ul></div>`
+      : "";
+    const tabs = [0, 1, 2, 3, 4].map((i) => {
+      const d = addDays(lunes, i);
+      const lbl = i === hoyIdx ? "Hoy" : fmtDia(d);
+      return `<button class="tab" type="button" role="tab" aria-selected="${S.diaSel === i}" data-act="dia" data-i="${i}">${esc(lbl)}</button>`;
+    }).join("");
+    const dia = addDays(lunes, S.diaSel);
+    const delDia = evs.filter((e) => startOfDay(e.ini).getTime() === dia.getTime() || (e.todoElDia && e.ini <= dia && e.end > dia))
+      .sort((a, b) => (b.todoElDia ? 1 : 0) - (a.todoElDia ? 1 : 0) || a.ini - b.ini);
+    const conflicto = (e) => !e.todoElDia && delDia.some((o) => o !== e && !o.todoElDia && o.ini < e.end && o.end > e.ini);
+    const lista = delDia.length
+      ? '<ul class="events">' + delDia.map((e) => `<li class="ev">
+          <span class="ev-time num">${e.todoElDia ? "Todo el día" : `${fmtTime(e.ini)}–${fmtTime(e.end)}`}</span>
+          <div><span>${esc(e.titulo)}</span>${e.externos || conflicto(e) ? `<div class="ev-chips">${e.externos ? '<span class="pill accent">Con externos</span>' : ""}${conflicto(e) ? '<span class="pill bad">Se encima</span>' : ""}</div>` : ""}</div>
+        </li>`).join("") + "</ul>"
+      : '<p class="muted small">Sin reuniones este día.</p>';
+    html += `<div style="display:flex;flex-direction:column;gap:10px"><div class="tabs" role="tablist" aria-label="Día de la semana">${tabs}</div><div role="tabpanel">${lista}</div></div>`;
+    $("agenda").innerHTML = html;
+  }
+
+  function renderTiempo(sem, ref) {
+    if (!sem) { $("tiempo-sub").textContent = ""; $("tiempo").innerHTML = '<div class="empty">Sin datos de agenda todavía.</div>'; return; }
+    const h = horario();
+    $("tiempo-sub").textContent = `Horario ${h.inicio}–${h.fin}`;
+    const rows = sem.dias.map((d) => {
+      const span = d.we - d.ws;
+      const pos = (a, b) => `left:${((a - d.ws) / span * 100).toFixed(2)}%;width:${((b - a) / span * 100).toFixed(2)}%`;
+      const pastW = Math.min(1, Math.max(0, (ref.getTime() - d.ws) / span));
+      const segs = d.reun.map(([a, b]) => `<span class="tl-seg m" style="${pos(a, b)}"></span>`).join("");
+      const focos = sem.bloques.filter((b) => b.ini.getTime() >= d.ws && b.fin.getTime() <= d.we)
+        .map((b) => `<span class="tl-seg f" style="${pos(b.ini.getTime(), b.fin.getTime())}"></span>`).join("");
+      const esHoy = startOfDay(ref).getTime() === d.dia.getTime();
+      return `<div class="tl-row${esHoy ? " today" : ""}">
+        <span class="tl-day">${esc(esHoy ? "Hoy" : fmtDia(d.dia))}</span>
+        <div class="tl-track" role="img" aria-label="${esc(fmtDia(d.dia))}: ${esc(fmtH(d.minReun))} en reuniones">${pastW > 0 ? `<span class="tl-seg past" style="width:${(pastW * 100).toFixed(2)}%"></span>` : ""}${segs}${focos}</div>
+        <span class="tl-hours num">${esc(fmtH(d.minReun))}</span>
+      </div>`;
+    }).join("");
+    const d0 = sem.dias[0];
+    const spanH = (d0.we - d0.ws) / 3600000;
+    const startH = new Date(d0.ws).getHours() + new Date(d0.ws).getMinutes() / 60;
+    const ticks = [];
+    for (let t = Math.ceil(startH / 3) * 3; t <= startH + spanH + 1e-9; t += 3) ticks.push(t);
+    if (ticks[0] !== startH) ticks.unshift(startH);
+    if (ticks[ticks.length - 1] !== startH + spanH) ticks.push(startH + spanH);
+    const tickHtml = ticks.map((t) => `<span style="left:${((t - startH) / spanH * 100).toFixed(2)}%">${Math.floor(t)}:${String(Math.round((t % 1) * 60)).padStart(2, "0")}</span>`).join("");
+    $("tiempo").innerHTML = `
+      <div class="split">
+        <div><p class="big num">${fmtPct(sem.totLab ? sem.totReun / sem.totLab : 0, 0)}</p><p class="small muted">de la semana en reuniones</p></div>
+        <div><p class="big num">${esc(fmtH(sem.totLab - sem.totReun))}</p><p class="small muted">libres para trabajo propio</p></div>
+      </div>
+      <div class="timeline">${rows}
+        <div class="tl-axis" aria-hidden="true"><span></span><div class="ticks">${tickHtml}</div><span></span></div>
+      </div>
+      <div class="legend"><span><i style="background:var(--meeting)"></i>Reuniones</span><span><i style="background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent)"></i>Bloques de foco</span></div>`;
+  }
+
+  function renderBloques(sem) {
+    if (!sem) { $("bloques").innerHTML = '<div class="empty">Sin datos de agenda todavía.</div>'; return; }
+    if (!sem.bloques.length) { $("bloques").innerHTML = '<div class="empty">No quedan huecos de 1 hora o más esta semana.</div>'; return; }
+    const items = (S.plan && S.plan.items) || [];
+    $("bloques").innerHTML = '<ul class="blocks">' + sem.bloques.map((b) => {
+      const asig = items.filter((i) => !i.hecho && i.bloque && bloqueKey(i.bloque) === bloqueKey(b));
+      return `<li class="block">
+        <div><span class="num">${esc(bloqueTxt(b))}</span>
+          <p class="block-for">${asig.length ? "Para: " + asig.map((i) => esc(i.titulo)).join(" · ") : "Sin entregable asignado"}</p></div>
+        <span class="pill num">${esc(fmtDur(b.min))}</span>
+      </li>`;
+    }).join("") + "</ul><p class=\"small muted\">Asigna un bloque a cada entregable desde el plan. Por ahora el evento se crea a mano en Outlook.</p>";
+  }
+
+  function renderCorreo(ref) {
+    const c = S.datos && S.datos.correo;
+    if (!c) { $("correo-sub").textContent = ""; $("correo").innerHTML = '<div class="empty">Sin datos de correo todavía.</div>'; return; }
+    const pend = (Array.isArray(c.pendientes) ? c.pendientes : [])
+      .map((p) => ({ ...p, r: parse(p.recibido) })).filter((p) => p.r)
+      .sort((a, b) => a.r - b.r);
+    $("correo-sub").textContent = `${pend.length} por responder`;
+    const dias = (r) => Math.max(0, Math.floor((startOfDay(ref) - startOfDay(r)) / 86400000));
+    const chip = (n) => {
+      const cls = n >= 7 ? "bad" : n >= 3 ? "warn" : "";
+      return `<span class="pill ${cls} num">${n === 0 ? "Hoy" : n + (n === 1 ? " día" : " días")}</span>`;
+    };
+    let html = "";
+    if (pend.length) {
+      html += `<div class="table-wrap"><table><thead><tr><th scope="col">Pendiente por responder</th><th scope="col" class="age">Espera</th></tr></thead><tbody>
+        ${pend.map((p) => `<tr><td><span class="from">${esc(p.de)}</span><br><span class="muted">${esc(p.asunto)}</span></td><td class="age">${chip(dias(p.r))}</td></tr>`).join("")}
+      </tbody></table></div>`;
+    } else {
+      html += '<p class="muted small">No tienes correos pendientes por responder.</p>';
+    }
+    const res = Array.isArray(c.resumen) ? c.resumen : [];
+    if (res.length) html += `<div><p class="eyebrow" style="margin-bottom:8px">Resumen del día</p><ul class="bullets">${res.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>`;
+    $("correo").innerHTML = html;
+  }
+
+  function renderCierre(st, met, ref) {
+    const finSemana = ref.getDay() === 5 || ref.getDay() === 6 || ref.getDay() === 0;
+    $("cierre-card").classList.toggle("highlight", finSemana);
+    const sigN = weekNum(isoWeek(addDays(mondayOf(ref), 7)));
+    $("cierre-sub").textContent = finSemana ? "Hoy toca cerrar la semana" : "Se usa los viernes";
+    const hechos = st.todos.filter((i) => i.hecho);
+    const pend = st.todos.filter((i) => !i.hecho);
+    const porMover = pend.filter((i) => !i.movido);
+    const lista = (arr, vacio) => arr.length ? `<ul>${arr.map((i) => `<li>${esc(i.titulo)}${i.movido ? ' <span class="muted small">· pasó a la semana ' + weekNum(i.movido) + "</span>" : ""}</li>`).join("")}</ul>` : `<p class="muted small">${vacio}</p>`;
+    const metHtml = met
+      ? `<ul>${met.filas.map((f) => `<li style="display:flex;justify-content:space-between;gap:8px"><span>${esc(f.nombre)}</span>${deltaHtml(f)}</li>`).join("")}</ul>`
+      : '<p class="muted small">Sin métricas todavía.</p>';
+    $("cierre").innerHTML = `
+      <div class="close-grid">
+        <div class="close-col"><h3>Cumplido (${hechos.length})</h3>${lista(hechos, "Aún no cierras entregables.")}</div>
+        <div class="close-col"><h3>Pendiente (${pend.length})</h3>${lista(pend, "No quedan pendientes.")}</div>
+        <div class="close-col"><h3>Métricas${met ? ` · semana ${weekNum(met.cur.semana)}` : ""}</h3>${metHtml}</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
+        <p class="small muted">${st.total ? `Cumplimiento: <strong class="num">${fmtPct(st.pct, 0)}</strong> de lo planeado.` : "Confirma tu plan para medir el cumplimiento."}</p>
+        <button class="btn${finSemana ? " primary" : ""}" type="button" data-act="pasar"${!porMover.length || !S.db || S.moviendo ? " disabled" : ""}>
+          ${icon.arrow} ${S.moviendo ? "Pasando…" : porMover.length ? `Pasar ${porMover.length} ${porMover.length === 1 ? "pendiente" : "pendientes"} a la semana ${sigN}` : "Sin pendientes por pasar"}
+        </button>
+      </div>`;
+  }
+
+  // ---------- Eventos ----------
+  $("form-item").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const inp = $("nuevo-titulo");
+    const t = inp.value.trim();
+    if (!t) { inp.focus(); return; }
+    agregarItem(t, $("nuevo-prio").value);
+    inp.value = "";
+    inp.focus();
+  });
+
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-act]");
+    if (!el || el.tagName === "SELECT" || el.type === "checkbox") return;
+    const act = el.dataset.act;
+    if (act === "dia") { S.diaSel = Number(el.dataset.i); render(); return; }
+    if (act === "confirmar") {
+      savePlan((p) => { p.confirmado = true; p.confirmadoEn = new Date().toISOString(); p.items.forEach((i) => { if (i.planeado == null) i.planeado = true; }); });
+      toast("Plan confirmado. Lo que agregues desde ahora contará como no planeado.");
+      return;
+    }
+    if (act === "reabrir") { savePlan((p) => { p.confirmado = false; p.items.forEach((i) => { if (i.planeado === false) i.planeado = null; }); }); return; }
+    if (act === "borrar") { const id = el.dataset.id; savePlan((p) => { p.items = p.items.filter((i) => i.id !== id); }); toast("Entregable eliminado."); return; }
+    if (act === "pasar") { pasarPendientes(); return; }
+    if (act === "foco-add") {
+      const met = analisisMetricas();
+      const sem = analisisSemana();
+      const i = Number(el.dataset.i);
+      const p = met && met.prios[i];
+      if (!p) return;
+      const b = sem.bloques[i];
+      agregarItem(p.accion, "alta", { origen: "foco", metrica: p.metrica.k, bloque: b ? { inicio: b.ini.toISOString(), fin: b.fin.toISOString() } : null });
+      toast("Prioridad agregada al plan.");
+    }
+  });
+
+  document.addEventListener("change", (e) => {
+    const el = e.target;
+    if (el.dataset.act === "toggle") {
+      const id = el.dataset.id;
+      savePlan((p) => { const it = p.items.find((i) => i.id === id); if (it) it.hecho = el.checked; });
+    } else if (el.dataset.act === "bloque") {
+      const id = el.dataset.id, v = el.value;
+      const sem = S.datos ? analisisSemana() : null;
+      const it0 = S.plan.items.find((i) => i.id === id);
+      let bloque = null;
+      if (v) {
+        const b = sem && sem.bloques.find((x) => bloqueKey(x) === v);
+        bloque = b ? { inicio: b.ini.toISOString(), fin: b.fin.toISOString() } : (it0 && it0.bloque) || null;
+      }
+      savePlan((p) => { const it = p.items.find((i) => i.id === id); if (it) it.bloque = bloque; });
+    }
+  });
+
+  // ---------- Arranque ----------
+  render();
+  const use = window.claude && typeof window.claude.use === "function" ? window.claude.use("db") : Promise.resolve(null);
+  Promise.resolve(use).catch(() => null).then((db) => {
+    if (!db) { S.dbEstado = "sin-db"; S.datos = null; suscribirPlan(); render(); return; }
+    S.db = db;
+    db.doc("tablero/datos").onSnapshot(
+      (snap) => { S.datos = snap.exists ? snap.data() : null; S.dbEstado = "ok"; suscribirPlan(); render(); },
+      () => { S.dbEstado = "error"; S.datos = null; suscribirPlan(); render(); }
+    );
+  });
+})();
+</script>
