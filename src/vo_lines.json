@@ -1,0 +1,47 @@
+{
+ "lines": [
+  {
+   "start": 0.95,
+   "end": 2.662,
+   "text": "Todo empieza con el fuego.",
+   "noSub": false,
+   "file": "vo_0.wav"
+  },
+  {
+   "start": 3.1,
+   "end": 4.601,
+   "text": "Con el corte perfecto.",
+   "noSub": false,
+   "file": "vo_1.wav"
+  },
+  {
+   "start": 7.85,
+   "end": 9.647,
+   "text": "Con las personas que importan.",
+   "noSub": false,
+   "file": "vo_2.wav"
+  },
+  {
+   "start": 9.72,
+   "end": 12.353,
+   "text": "En Casa RES somos maestros de la parrilla.",
+   "noSub": false,
+   "file": "vo_3.wav"
+  },
+  {
+   "start": 12.42,
+   "end": 13.313,
+   "text": "Casa Res.",
+   "noSub": true,
+   "file": "vo_4.wav"
+  },
+  {
+   "start": 13.36,
+   "end": 14.836,
+   "text": "Sellamos tus recuerdos.",
+   "noSub": true,
+   "file": "vo_5.wav"
+  }
+ ],
+ "tag": 13.36
+}
